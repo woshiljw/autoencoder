@@ -107,3 +107,10 @@ print("************************Softmax layer finished***************************
 print("Test accurancy before fine-tune")
 print(sess.run(accurancy,feed_dict={x_ft:mnist.test.images,y_:mnist.test.labels}))
 
+for _ in range(1000):
+    batch_xs,batch_ys = mnist.train.next_batch(batch_size)
+    sess.run(train_step_ft,feed_dict={x_ft:batch_xs,y_:batch_ys})
+
+print("************************fine turning finished****************************")
+
+print(sess.run(accurancy,feed_dict={x_ft:mnist.test.images,y_:mnist.test.labels}))
