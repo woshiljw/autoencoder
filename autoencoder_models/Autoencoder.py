@@ -84,7 +84,7 @@ class Autoencoder(object):
         return self.sess.run(self.cost,feed_dict={self.x:X})
 
     def transform(self,X):
-        return self.sess.run(self.cost,feed_dict={self.x:X})
+        return self.sess.run(self.hidden_encode[-1],feed_dict={self.x:X})
 
     def generate(self,hidden=None):
         if hidden is None:
