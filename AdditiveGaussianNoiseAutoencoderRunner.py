@@ -1,4 +1,4 @@
-from autoencoder_models.DenoisingAutoencoder import AdditiveGaussianNoiseAutoencoder
+from autoencoder_models.DenoisingAutoencoder import MaskingNoiseAutoencoder
 
 import numpy as np
 import sklearn.preprocessing as prep
@@ -28,12 +28,11 @@ batch_sizd = 128
 
 desplay_step = 10
 
-gae = AdditiveGaussianNoiseAutoencoder(
+gae = MaskingNoiseAutoencoder(
     n_input=784,
     n_hidden=200,
     transfer_function=tf.nn.softplus,
     optimizer=tf.train.AdamOptimizer(learning_rate=0.001),
-    scale=0.1
 )
 
 for epoch in range(train_epochs):
@@ -51,5 +50,9 @@ for epoch in range(train_epochs):
         print("Epoch:", '%d,' % (epoch + 1), "Cost:", "{:.9f}".format(avg_cost))
 
 print("Total cost: " + str(gae.calc_total_cost(X_text)))
+
+'''
+
+'''
 plt.imshow(np.reshape(gae.reconstruct(X_text),(-1,28,28))[0])
 plt.show()

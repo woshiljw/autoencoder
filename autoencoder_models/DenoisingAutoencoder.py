@@ -3,7 +3,8 @@ import numpy as np
 
 
 class AdditiveGaussianNoiseAutoencoder(object):
-    def __init__(self,n_input,n_hidden,transfer_function=tf.nn.softplus,optimizer=tf.train.AdamOptimizer(),scale=0.1):
+    def __init__(self,n_input,n_hidden,
+                 transfer_function=tf.nn.softplus,optimizer=tf.train.AdamOptimizer(),scale=0.1):
         self.n_input = n_input
         self.n_hidden = n_hidden
         self.transfer = transfer_function
@@ -83,3 +84,63 @@ class AdditiveGaussianNoiseAutoencoder(object):
     def getBias(self):
         return self.sess.run(self.weights['b1'])
 
+class MaskingNoiseAutoencoder(object):
+    def __init__(self,n_input,n_hidden,transfer_function=tf.nn.softplus,
+                 optimizer = tf.train.AdamOptimizer()):
+        self.n_input = n_input
+        self.n_hidden = n_hidden
+        self.transfer = transfer_function
+        self.optimizer = optimizer
+
+        self.dropout = tf.placeholder(tf.float32)
+        self.x = tf.placeholder(tf.float32,shape=[None,784])
+        self.weights = self._initialize_weights()
+
+        self.droped = tf.nn.dropout(self.x,self.dropout)
+        self.hidden = self.transfer(
+            tf.add(
+                tf.matmul(self.x,self.weights['w1']),self.weights['b1']
+            )
+        )
+        self.recon = tf.add(
+            tf.matmul(self.hidden,self.weights['w2']),self.weights['b2']
+        )
+
+        self.cost = tf.reduce_mean(
+            tf.pow(
+                tf.subtract(self.x,self.recon),2.0
+            )
+        )
+        self.opt = self.optimizer.minimize(self.cost)
+
+        init = tf.global_variables_initializer()
+        self.sess = tf.Session()
+        self.sess.run(init)
+
+    def _initialize_weights(self):
+        all_weights = dict()
+
+        all_weights['w1'] = tf.Variable(
+            tf.truncated_normal((self.n_input,self.n_hidden),dtype=tf.float32)
+        )
+        all_weights['b1'] = tf.Variable(
+            tf.constant(0.1,shape=[self.n_hidden])
+        )
+        all_weights['w2'] = tf.Variable(
+            tf.truncated_normal((self.n_hidden,self.n_input),dtype=tf.float32)
+        )
+        all_weights['b2'] = tf.Variable(
+            tf.constant(0.1,shape=[self.n_input])
+        )
+
+        return all_weights
+
+    def partial_fit(self,X,dropout=0.2):
+        cost,opt = self.sess.run((self.cost,self.opt),feed_dict={self.x:X,self.dropout:dropout})
+        return cost
+
+    def calc_total_cost(self,X):
+        return self.sess.run(self.cost, feed_dict={self.x: X, self.dropout: 0.1})
+
+    def reconstruct(self,X):
+        return self.sess.run(self.recon, feed_dict={self.x: X, self.dropout: 0})
