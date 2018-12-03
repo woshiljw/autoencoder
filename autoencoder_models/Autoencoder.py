@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
 import tensorflow as tf
 
@@ -16,9 +20,10 @@ class Autoencoder(object):
         h = self.x
 
         for layer in range(len(self.n_layers)-1):
+            #print(self.weights['encode'][layer])
             h = self.transfer(
                 tf.add(
-                    tf.matmul(self.weights['encode'][layer]['w']),
+                    tf.matmul(h,self.weights['encode'][layer]['w']),
                     self.weights['encode'][layer]['b']
                 )
             )
@@ -46,7 +51,7 @@ class Autoencoder(object):
 
     def _initialize_weights(self):
         all_weight = dict()
-        initializer = tf.contrib.layer.xavier_initializer()
+        initializer = tf.contrib.layers.xavier_initializer()
 
         encoder_weights = []
         for layer in range(len(self.n_layers)-1):
@@ -61,10 +66,10 @@ class Autoencoder(object):
 
         for layer in range(len(self.n_layers)-1,0,-1):
             w = tf.Variable(
-                initializer((self.n_layers[layer], self.n_layers[layer + 1]),
+                initializer((self.n_layers[layer], self.n_layers[layer - 1]),
                             dtype=tf.float32))
             b = tf.Variable(
-                tf.zeros([self.n_layers[layer + 1]], dtype=tf.float32))
+                tf.zeros([self.n_layers[layer - 1]], dtype=tf.float32))
             recon_weights.append({'w': w, 'b': b})
 
         all_weight['encode'] = encoder_weights
@@ -72,7 +77,7 @@ class Autoencoder(object):
         return all_weight
 
     def partial_fit(self,X):
-        cost,opt = self.sess.run((self.cost,self.optimizer),feed_dict={self.x,X})
+        cost,opt = self.sess.run((self.cost,self.optimizer),feed_dict={self.x:X})
         return cost
 
     def calc_total_cost(self,X):
@@ -83,4 +88,16 @@ class Autoencoder(object):
 
     def generate(self,hidden=None):
         if hidden is None:
-            hidden = np.random
+            hidden = np.random.normal(size=self.weights['encode'][-1]['b'].shape)
+        return self.sess.run(self.reconstruction,feed_dict={self.hidden_encode[-1]:hidden})
+
+    def reconstruct(self,X):
+        return self.sess.run(self.reconstruction,feed_dict={self.x:X})
+
+    def getWeights(self):
+        #raise NotImplementedError
+        return self.sess.run(self.weights)
+
+    def getBias(self):
+        raise NotImplementedError
+        return self.sess.run(self.weights)
