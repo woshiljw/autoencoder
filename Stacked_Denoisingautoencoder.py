@@ -103,3 +103,7 @@ for epoch in range(1000):
         print("Epoch:{},Cost:{:.9f}".format(epoch, cost))
 
 print("************************Softmax layer finished****************************")
+
+print("Test accurancy before fine-tune")
+print(sess.run(accurancy,feed_dict={x_ft:mnist.test.images,y_:mnist.test.labels}))
+
