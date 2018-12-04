@@ -43,8 +43,7 @@ class Autoencoder(object):
     def _initialize_weights(self):
         all_weights = dict()
 
-        all_weights['w1'] = tf.get_variable('w1',self.filter_size,
-                                            initializer=tf.contrib.layers.xavier_initializer())
+        all_weights['w1'] = tf.Variable(tf.truncated_normal(self.filter_size))
         all_weights['b1'] = tf.Variable(tf.constant(0.1,shape=[self.filter_size[3]]))
         all_weights['w2'] = tf.Variable(tf.truncated_normal([2,2,self.filter_size[3],self.filter_size[3]],stddev=0.1))
         all_weights['b2'] = tf.Variable(tf.constant(0.1,shape=[self.filter_size[3]]))
