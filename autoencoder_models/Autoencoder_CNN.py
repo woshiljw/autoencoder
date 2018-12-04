@@ -21,11 +21,17 @@ class Autoencoder(object):
         self.hidden_pool = tf.nn.max_pool(self.hidden_conv,[1,2,2,1],
                                           [1,2,2,1],padding='SAME')
 
-        self.deconv = self.output_transfer(
+        self.unpool = self.hidden_transfer(
             tf.nn.conv2d_transpose(self.hidden_pool,self.weights['w2'],
-                                   self.x.get_shape(),
+                                   self.hidden_conv.get_shape(),
                                    [1,2,2,1],padding='SAME')+self.weights['b2']
         )
+        self.deconv = self.output_transfer(
+            tf.nn.conv2d(
+                self.unpool,self.weights['w3'],[1,1,1,1],padding='SAME'
+            )+self.weights['b3']
+        )
+
 
         self.cost = tf.reduce_mean(
             tf.pow(
@@ -44,13 +50,18 @@ class Autoencoder(object):
         all_weights['w1'] = tf.get_variable('w1',self.filter_size,
                                             initializer=tf.contrib.layers.xavier_initializer())
         all_weights['b1'] = tf.Variable(tf.constant(0.1,shape=[self.filter_size[3]]))
-        all_weights['w2'] = tf.Variable(tf.truncated_normal([2,2,self.filter_size[2],self.filter_size[3]],stddev=0.1))
-        all_weights['b2'] = tf.Variable(tf.constant(0.1,shape=[self.filter_size[2]]))
+        all_weights['w2'] = tf.Variable(tf.truncated_normal([2,2,self.filter_size[3],self.filter_size[3]],stddev=0.1))
+        all_weights['b2'] = tf.Variable(tf.constant(0.1,shape=[self.filter_size[3]]))
+        all_weights['w3'] = tf.Variable(
+            tf.truncated_normal([self.filter_size[0],self.filter_size[1],
+                                 self.filter_size[3],self.filter_size[2]],stddev=0.1)
+        )
+        all_weights['b3'] = tf.Variable(tf.constant(0.1,shape=[self.filter_size[2]]))
 
         return all_weights
 
     def test_fit(self,X):
-        return self.sess.run(self.cost,feed_dict={self.x:X})
+        return self.sess.run(self.deconv,feed_dict={self.x:X})
 
     def partial_fit(self,X):
         cost,opt = self.sess.run((self.cost,self.optimizer),feed_dict={self.x:X})
@@ -75,7 +86,7 @@ def test():
     autoencoder = Autoencoder([3,3,1,36],
                               [64,28,28,1])
     out = autoencoder.test_fit(np.reshape(mnist.test.images[:64],[-1,28,28,1]))
-    print(out)
+    print(np.shape(out))
 
 
 if __name__ == '__main__':
