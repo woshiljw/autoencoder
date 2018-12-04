@@ -26,12 +26,8 @@ class Autoencoder(object):
                                    self.hidden_conv.get_shape(),
                                    [1,2,2,1],padding='SAME')+self.weights['b2']
         )
-        self.deconv = self.output_transfer(
-            tf.nn.conv2d(
-                self.unpool,self.weights['w3'],[1,1,1,1],padding='SAME'
-            )+self.weights['b3']
-        )
-
+        self.deconv = tf.nn.conv2d(
+                self.unpool,self.weights['w3'],[1,1,1,1],padding='SAME')+self.weights['b3']
 
         self.cost = tf.reduce_mean(
             tf.pow(
