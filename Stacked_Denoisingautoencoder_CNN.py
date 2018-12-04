@@ -74,3 +74,17 @@ for epoch in range(training_epoch):
 
 print("************************First AE training finished****************************")
 
+for epoch in range(training_epoch):
+    avg_cost = 0
+    total_batch = int(n_samples / batch_size)
+
+    for i in range(total_batch):
+        batch_xs, _ = mnist.train.next_batch(batch_size)
+        h_ae1_out = ae1.transform(np.reshape(batch_xs,[-1,28,28,1]))
+        cost = ae2.partial_fit(h_ae1_out)
+        avg_cost += cost / n_samples * batch_size
+
+    if epoch % display_step == 0:
+        print("Epoch:{},Cost:{:.9f}".format(epoch, avg_cost))
+
+print("************************Second AE training finished****************************")
