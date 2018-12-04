@@ -88,3 +88,5 @@ for epoch in range(training_epoch):
         print("Epoch:{},Cost:{:.9f}".format(epoch, avg_cost))
 
 print("************************Second AE training finished****************************")
+print("Test accurancy before fine-tune")
+print(sess.run(cost,feed_dict={x_ft:np.reshape(mnist.test.images)}))
