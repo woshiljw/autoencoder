@@ -60,20 +60,13 @@ init = tf.global_variables_initializer()
 sess = tf.Session()
 sess.run(init)
 
-
-print(sess.run(cost,feed_dict={x_ft:np.reshape(mnist.test.images[:64],[-1,28,28,1])}))
-
-
-
-
-
-'''for epoch in range(training_epoch):
+for epoch in range(training_epoch):
     avg_cost = 0
     total_batch = int(n_samples/batch_size)
 
     for i in range(total_batch):
         batch_xs,_=mnist.train.next_batch(batch_size)
-        cost = ae1.partial_fit(np.reshape(batch_xs,[-1,28,28,1]))
+        cost,_ = sess.run(ae1.partial_fit(),feed_dict={ae1.x:np.reshape(batch_xs,[-1,28,28,1])})
         avg_cost +=cost/n_samples*batch_size
 
     if epoch % display_step == 0:
@@ -87,12 +80,20 @@ for epoch in range(training_epoch):
 
     for i in range(total_batch):
         batch_xs, _ = mnist.train.next_batch(batch_size)
-        h_ae1_out = ae1.transform(np.reshape(batch_xs,[-1,28,28,1]))
-        cost = ae2.partial_fit(h_ae1_out)
+        h_ae1_out = sess.run(ae1.transform(),feed_dict={ae1.x:np.reshape(batch_xs,[-1,28,28,1])})
+        cost = sess.run(ae2.partial_fit(),feed_dict={ae2.x:h_ae1_out})
         avg_cost += cost / n_samples * batch_size
 
     if epoch % display_step == 0:
         print("Epoch:{},Cost:{:.9f}".format(epoch, avg_cost))
 
 print("************************Second AE training finished****************************")
-print("Test accurancy before fine-tune")'''
+print("Test accurancy before fine-tune")
+
+print(sess.run(cost,feed_dict={x_ft:np.reshape(mnist.test.images[:64],[-1,28,28,1])}))
+
+
+
+
+
+''''''

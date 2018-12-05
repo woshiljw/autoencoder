@@ -36,10 +36,6 @@ class Autoencoder(object):
         )
 
         self.optimizer = optimizer.minimize(self.cost)
-
-        init = tf.global_variables_initializer()
-        self.sess = tf.Session()
-        self.sess.run(init)
     def _initialize_weights(self):
         all_weights = dict()
 
@@ -55,26 +51,25 @@ class Autoencoder(object):
 
         return all_weights
 
-    def test_fit(self,X):
-        return self.sess.run(self.deconv,feed_dict={self.x:X})
+    def test_fit(self):
+        return self.deconv
 
-    def partial_fit(self,X):
-        cost,opt = self.sess.run((self.cost,self.optimizer),feed_dict={self.x:X})
-        return cost
+    def partial_fit(self):
+        return (self.cost,self.optimizer)
 
     def calc_total_cost(self,X):
         return self.sess.run(self.cost,feed_dict={self.x:X})
 
-    def transform(self,X):
-        return self.sess.run(self.hidden_pool,feed_dict={self.x:X})
+    def transform(self):
+        return self.hidden_pool
 
     def generate(self,hidden=None):
         if hidden is None:
             hidden = np.random.normal(size=self.weights['encode'][-1]['b'].shape)
-        return self.sess.run(self.deconv,feed_dict={self.hidden_pool:hidden})
+        return self.deconv
 
-    def reconstruct(self,X):
-        return self.sess.run(self.deconv,feed_dict={self.x:X})
+    def reconstruct(self):
+        return self.deconv
 
 def test():
     mnist = input_data.read_data_sets('../data',one_hot=True)
