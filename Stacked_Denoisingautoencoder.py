@@ -72,7 +72,7 @@ for epoch in range(training_epoch):
 
     for i in range(total_batch):
         batch_xs,_=mnist.train.next_batch(batch_size)
-        cost = ae1.partial_fit(batch_xs)
+        cost,_= sess.run(ae1.partial_fit(),feed_dict={ae1.x:batch_xs})
         avg_cost +=cost/n_samples*batch_size
 
     if epoch % display_step == 0:
@@ -86,8 +86,8 @@ for epoch in range(training_epoch):
 
     for i in range(total_batch):
         batch_xs, _ = mnist.train.next_batch(batch_size)
-        h_ae1_out = ae1.transform(batch_xs)
-        cost = ae2.partial_fit(h_ae1_out)
+        h_ae1_out = sess.run(ae1.transform(),feed_dict={ae1.x:batch_xs})
+        cost = sess.run(ae2.partial_fit(),feed_dict={ae1.x:h_ae1_out})
         avg_cost += cost / n_samples * batch_size
 
     if epoch % display_step == 0:
@@ -96,8 +96,8 @@ for epoch in range(training_epoch):
 print("************************Second AE training finished****************************")
 for epoch in range(1000):
     batch_xs,batch_ys = mnist.train.next_batch(batch_size)
-    h_ae1_out = ae1.transform(batch_xs)
-    h_ae2_out = ae2.transform(h_ae1_out)
+    h_ae1_out = sess.run(ae1.transform(),feed_dict={ae1.x:batch_xs})
+    h_ae2_out = sess.run(ae2.transform(),feed_dict={ae1.x:h_ae1_out})
     _,cost = sess.run((train_step,cross_entropy),feed_dict={x:h_ae2_out,y_:batch_ys})
     if epoch % 10 == 0:
         print("Epoch:{},Cost:{:.9f}".format(epoch, cost))

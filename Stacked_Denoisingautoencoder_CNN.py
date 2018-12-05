@@ -18,7 +18,7 @@ ae1 = Autoencoder(filter_size=[5,5,1,32],
 ae2 = Autoencoder(filter_size=[3,3,32,64],
                   input_shape=[64,14,14,32])
 
-x = tf.placeholder(tf.float32,[None,28,28,1])
+
 
 x_ft = tf.placeholder(tf.float32,[None,28,28,1])
 h = x_ft
@@ -53,14 +53,21 @@ h = ae1.hidden_transfer(
 )
 h = tf.nn.conv2d(h,ae1.weights['w3'],[1,1,1,1],padding='SAME')+ae1.weights['b3']
 cost = tf.reduce_mean(
-    tf.square(h-x)
+    tf.square(h-x_ft)
 )
 train_step_ft = tf.train.AdamOptimizer(0.001).minimize(cost)
 init = tf.global_variables_initializer()
 sess = tf.Session()
 sess.run(init)
 
-for epoch in range(training_epoch):
+
+print(sess.run(cost,feed_dict={x_ft:np.reshape(mnist.test.images[:64],[-1,28,28,1])}))
+
+
+
+
+
+'''for epoch in range(training_epoch):
     avg_cost = 0
     total_batch = int(n_samples/batch_size)
 
@@ -88,5 +95,4 @@ for epoch in range(training_epoch):
         print("Epoch:{},Cost:{:.9f}".format(epoch, avg_cost))
 
 print("************************Second AE training finished****************************")
-print("Test accurancy before fine-tune")
-print(sess.run(cost,feed_dict={x_ft:np.reshape(mnist.test.images)}))
+print("Test accurancy before fine-tune")'''

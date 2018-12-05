@@ -45,10 +45,6 @@ class Autoencoder(object):
         self.cost = 0.5*tf.reduce_mean(tf.pow(tf.subtract(self.reconstruction,self.x),2.0))
         self.optimizer = optimizer.minimize(self.cost)
 
-        init = tf.global_variables_initializer()
-        self.sess = tf.Session()
-        self.sess.run(init)
-
     def _initialize_weights(self):
         all_weight = dict()
         initializer = tf.contrib.layers.xavier_initializer()
@@ -76,28 +72,23 @@ class Autoencoder(object):
         all_weight['recon'] = recon_weights
         return all_weight
 
-    def partial_fit(self,X):
-        cost,opt = self.sess.run((self.cost,self.optimizer),feed_dict={self.x:X})
-        return cost
+    def partial_fit(self):
+        return (self.cost,self.optimizer)
 
     def calc_total_cost(self,X):
-        return self.sess.run(self.cost,feed_dict={self.x:X})
+        return self.cost
 
-    def transform(self,X):
-        return self.sess.run(self.hidden_encode[-1],feed_dict={self.x:X})
+    def transform(self):
+        return self.hidden_encode[-1]
 
     def generate(self,hidden=None):
-        if hidden is None:
-            hidden = np.random.normal(size=self.weights['encode'][-1]['b'].shape)
-        return self.sess.run(self.reconstruction,feed_dict={self.hidden_encode[-1]:hidden})
+        return self.reconstruction
 
     def reconstruct(self,X):
-        return self.sess.run(self.reconstruction,feed_dict={self.x:X})
-
+        return self.reconstruction
     def getWeights(self):
         #raise NotImplementedError
-        return self.sess.run(self.weights)
+        return self.weights
 
     def getBias(self):
-        raise NotImplementedError
-        return self.sess.run(self.weights)
+        return self.weights
