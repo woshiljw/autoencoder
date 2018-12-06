@@ -18,14 +18,16 @@ class Stacked_AutoEncoder(object):
 
         # the decoder layer
 
-        self.unpool = tf.image.resize_nearest_neighbor(self.pool,[32,128])
 
         self.decode = hidden_transfer(
-            tf.nn.conv2d_transpose(self.unpool,self.weights['w2'],self.x.get_shape(),
+            tf.nn.conv2d_transpose(self.pool,self.weights['w2'],[64,16,64,3],
                                              [1,1,1,1],padding="SAME")
         )
+
+        self.unpool = tf.image.resize_nearest_neighbor(self.decode, [32, 128])
+
         self.cost = tf.reduce_mean(
-            tf.square(self.decode-self.x)
+            tf.square(self.unpool-self.x)
         )
         self.opt = tf.train.AdamOptimizer().minimize(self.cost)
 
