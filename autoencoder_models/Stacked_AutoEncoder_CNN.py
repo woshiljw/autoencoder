@@ -19,15 +19,22 @@ class Stacked_AutoEncoder(object):
         # the decoder layer
 
 
+        print(self.pool.get_shape())
+
         self.decode = hidden_transfer(
-            tf.nn.conv2d_transpose(self.pool,self.weights['w2'],[64,16,64,3],
+            tf.nn.conv2d_transpose(self.pool,self.weights['w2'],[64,16,64,64],
                                              [1,1,1,1],padding="SAME")
         )
 
         self.unpool = tf.image.resize_nearest_neighbor(self.decode, [32, 128])
 
+        self.out = tf.nn.conv2d(self.unpool,
+                                   tf.random_normal([1,1,64,3]),[1,1,1,1],padding='SAME')
+
+
+
         self.cost = tf.reduce_mean(
-            tf.square(self.unpool-self.x)
+            tf.square(self.out-self.x)
         )
         self.opt = tf.train.AdamOptimizer().minimize(self.cost)
 
@@ -45,10 +52,10 @@ class Stacked_AutoEncoder(object):
             tf.constant(0.1, shape=[self.filter_size[3]])
         )
         all_weights['w2'] = tf.Variable(
-            tf.truncated_normal(self.filter_size, stddev=0.1)
+            tf.truncated_normal([5,5,64,64], stddev=0.1)
         )
         all_weights['b2'] = tf.Variable(
-            tf.constant(0.1, shape=[self.filter_size[3]])
+            tf.constant(0.1, shape=[64])
         )
         '''
         '''
@@ -62,7 +69,7 @@ class Stacked_AutoEncoder(object):
         return self.cost
 
     def reconstruct(self):
-        return self.decode
+        return self.out
 
 
 def test():
