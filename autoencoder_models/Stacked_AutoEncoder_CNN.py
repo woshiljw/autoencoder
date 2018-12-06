@@ -18,31 +18,17 @@ class Stacked_AutoEncoder(object):
 
         # the decoder layer
 
-        self.unpool = hidden_transfer(
-            tf.nn.conv2d_transpose(self.pool, self.weights['w2'],
-                                   self.conv.get_shape(),
-                                   [1, 2, 2, 1], padding='SAME') + self.weights['b2']
-        )
-        self.deconv = tf.nn.conv2d(
-            self.unpool, self.weights['w3'], [1, 1, 1, 1], padding='SAME') + self.weights['b3']
+        self.unpool = tf.image.resize_nearest_neighbor(self.pool,[32,128])
 
-        print('deconv: ',self.deconv.get_shape())
+        self.decode = tf.nn.conv2d_transpose(self.unpool,self.weights['w2'],self.x.get_shape(),
+                                             [1,1,1,1],padding="SAME")
         self.cost = tf.reduce_mean(
-            tf.square(self.x - self.deconv)
+            tf.square(self.decode-self.x)
         )
-        self.opt = tf.train.AdamOptimizer(0.001).minimize(self.cost)
+        self.opt = tf.train.AdamOptimizer().minimize(self.cost)
 
         '''
         
-        output_shape = [int(self.pool.get_shape()[0]),
-                        int(self.pool.get_shape()[1]), int(self.pool.get_shape()[2]),
-                        self.input_shape[3]]
-        self.deconv = hidden_transfer(
-            tf.nn.conv2d_transpose(self.pool, self.weights['w2'], output_shape, [1, 1, 1, 1], padding='SAME')
-            + self.weights['b2']
-        )
-        self.unpool = tf.nn.conv2d_transpose(self.deconv, self.weights['w3'], self.x.get_shape(), [1, 2, 2, 1],
-                                             padding='SAME')
         '''
 
     def _initialize_weights(self):
@@ -54,32 +40,13 @@ class Stacked_AutoEncoder(object):
         all_weights['b1'] = tf.Variable(
             tf.constant(0.1, shape=[self.filter_size[3]])
         )
-
-        all_weights['w2'] = tf.Variable(
-            tf.truncated_normal([2, 2, self.filter_size[3], self.filter_size[3]], stddev=0.1))
-        all_weights['b2'] = tf.Variable(tf.constant(0.1, shape=[self.filter_size[3]]))
-        all_weights['w3'] = tf.Variable(
-            tf.truncated_normal([self.filter_size[0], self.filter_size[1],
-                                 self.filter_size[3], self.filter_size[2]], stddev=0.1)
-        )
-        print(all_weights['w3'].shape)
-        all_weights['b3'] = tf.Variable(tf.constant(0.1, shape=[self.filter_size[2]]))
-
-        # deconv_filter_size = [self.filter_size[0],self.filter_size[1],self.filter_size[3],self.filter_size[3]]
-
-        '''
-        
         all_weights['w2'] = tf.Variable(
             tf.truncated_normal(self.filter_size, stddev=0.1)
         )
         all_weights['b2'] = tf.Variable(
-            tf.constant(0.1, shape=[self.filter_size[2]])
+            tf.constant(0.1, shape=[self.filter_size[3]])
         )
-        print([2, 2, self.input_shape[3], self.input_shape[3]])
-        all_weights['w3'] = tf.Variable(
-            tf.truncated_normal([2, 2, self.input_shape[3], self.input_shape[3]])
-        )
-        
+        '''
         '''
         return all_weights
 
@@ -91,7 +58,7 @@ class Stacked_AutoEncoder(object):
         return self.cost
 
     def reconstruct(self):
-        return self.unpool
+        return self.decode
 
 
 def test():
@@ -101,8 +68,9 @@ def test():
     with tf.Session() as sess:
         sae = Stacked_AutoEncoder([5, 5, 3, 64], [64, 32, 128, 3])
         sess.run(tf.global_variables_initializer())
+        out = sess.run(sae.cost, feed_dict={sae.x: np.reshape(data['train'][:64], [-1, 32, 128, 3])})
 
-        print(sess.run(sae.cost, feed_dict={sae.x: np.reshape(data['train'][:64], [-1, 32, 128, 3])}))
+        print(out)
     '''
     
     
