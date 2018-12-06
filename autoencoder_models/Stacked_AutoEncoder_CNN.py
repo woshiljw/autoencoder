@@ -27,6 +27,11 @@ class Stacked_AutoEncoder(object):
         self.decode = hidden_transfer(tf.nn.conv2d_transpose(self.unpool,self.weights['w2'],[64,32,128,3],
                                              [1,1,1,1],padding="SAME"))
 
+        self.decode = tf.sigmoid(
+            tf.nn.conv2d(self.decode,
+                         tf.truncated_normal([1,1,3,3]),[1,1,1,1],padding='SAME'
+                         )
+        )
 
         self.out = self.decode
 
