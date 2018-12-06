@@ -29,7 +29,7 @@ class Stacked_AutoEncoder(object):
         self.unpool = tf.image.resize_nearest_neighbor(self.decode, [32, 128])
 
         self.out = tf.nn.conv2d(self.unpool,
-                                   tf.random_normal([1,1,64,3]),[1,1,1,1],padding='SAME')
+                                   tf.random_normal([5,5,64,3]),[1,1,1,1],padding='SAME')
 
 
 
