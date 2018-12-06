@@ -22,7 +22,7 @@ class Stacked_AutoEncoder(object):
 
         print(self.pool.get_shape())
 
-        self.pool = batch_norm(self.pool)
+        #self.pool = batch_norm(self.pool)
         self.unpool = tf.image.resize_nearest_neighbor(self.pool, [32, 128])
         self.decode = hidden_transfer(tf.nn.conv2d_transpose(self.unpool,self.weights['w2'],[64,32,128,3],
                                              [1,1,1,1],padding="SAME"))
