@@ -1,98 +1,98 @@
 import tensorflow as tf
+import numpy as np
 from tensorflow.contrib.layers import batch_norm
 
+
 class Stacked_AutoEncoder(object):
-    def __init__(self, filter_size, input_shape,
-                 hidden_transfer=tf.nn.relu):
-        self.filter_size = filter_size
-        self.x = tf.placeholder(tf.float32, input_shape)
-        self.input_shape = input_shape
-        self.weights = self._initialize_weights()
+    def __init__(self):
+        pass
+    def build(self,data, name, filter_size):
 
-        # the encoder layer
-        self.conv = hidden_transfer(
-            tf.nn.conv2d(self.x, self.weights['w1'], [1, 1, 1, 1], padding="SAME")
-            + self.weights['b1']
-        )
-        self.conv = batch_norm(self.conv)
-        self.pool = tf.nn.max_pool(self.conv, [1, 2, 2, 1], [1, 2, 2, 1], padding='SAME')
+        with tf.name_scope(name) as scope:
+            input = data
+            input_shape = [-1,int(input.shape[1]),int(input.shape[2]),int(input.shape[3])]
+            c1 = self._conv2d(input, name+'c1', filter_size)
+            p1 = self._maxpool2d(c1, name+'p1')
 
-        # the decoder layer
+            dc1 = self._deconv2d(p1, name+'dc1', kshape=filter_size[:2], n_outputs=3)
+            up1 = self._upsample(dc1, name+'up1', factor=[2, 2])
 
+            output = self._fullyConnected(up1, name+'output',output_size=input.shape[1] * input.shape[2] * input.shape[3])
+            with tf.name_scope(name+'cost'):
 
-        print(self.pool.get_shape())
+                self.cost = tf.reduce_mean(
+                    tf.square(tf.subtract(tf.reshape(output,input_shape),data)))
+            return c1,p1,dc1,up1,self.cost
 
-        #self.pool = batch_norm(self.pool)
+    def _conv2d(self, input, name, kshape, strides=[1, 1, 1, 1]):
+        with tf.variable_scope(name):
+            W = tf.get_variable(name='w_' + name,
+                                shape=kshape,
+                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            b = tf.get_variable(name='b_' + name,
+                                shape=[kshape[3]],
+                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            out = tf.nn.conv2d(input, W, strides=strides, padding='SAME')
+            out = tf.nn.bias_add(out, b)
+            out = tf.nn.leaky_relu(out)
+            return out
 
-        self.decode = hidden_transfer(tf.nn.conv2d(self.pool,self.weights['w2'],
-                                             [1,1,1,1],padding="SAME")+self.weights['b2'])
-        self.decode = batch_norm(self.decode)
-        self.unpool = tf.image.resize_bilinear(self.decode, [32, 128])
-        self.decode =tf.nn.softmax(tf.nn.conv2d(self.unpool,
-                         tf.truncated_normal([1,1,64,3]),[1,1,1,1],padding='SAME'
-                         ))
+    def _deconv2d(self,input, name, kshape, n_outputs, strides=[1, 1]):
+        with tf.variable_scope(name):
+            out = tf.contrib.layers.conv2d_transpose(input,
+                                                     num_outputs=n_outputs,
+                                                     kernel_size=kshape,
+                                                     stride=strides,
+                                                     padding='SAME',
+                                                     weights_initializer=tf.contrib.layers.xavier_initializer_conv2d(
+                                                         uniform=False),
+                                                     biases_initializer=tf.contrib.layers.xavier_initializer(
+                                                         uniform=False),
+                                                     activation_fn=tf.nn.leaky_relu)
+            return out
 
+    def _maxpool2d(self,x, name, kshape=[1, 2, 2, 1], strides=[1, 2, 2, 1]):
+        with tf.variable_scope(name):
+            out = tf.nn.max_pool(x,
+                                 ksize=kshape,  # size of window
+                                 strides=strides,
+                                 padding='SAME')
 
-        self.out = self.decode
+            return out
 
+    def _upsample(self,input, name, factor=[2, 2]):
 
+        size = [int(input.shape[1]) * factor[0], int(input.shape[2]) * factor[1]]
+        with tf.variable_scope(name):
+            out = tf.image.resize_bilinear(input, size=size, align_corners=None, name=None)
 
+            return out
 
-        self.cost = tf.reduce_mean(
-            tf.square(self.out-self.x)
-        )
-        self.opt = tf.train.AdamOptimizer().minimize(self.cost)
+    def _fullyConnected(self,input, name, output_size):
+        with tf.variable_scope(name):
+            input_size = input.shape[1:]
+            input_size = int(np.prod(input_size))  # get total num of cells in one input image
+            W = tf.get_variable(name='w_' + name,
+                                shape=[input_size, output_size],
+                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            b = tf.get_variable(name='b_' + name,
+                                shape=[output_size],
+                                initializer=tf.contrib.layers.xavier_initializer(uniform=False))
+            input = tf.reshape(input, [-1, input_size])
+            out = tf.nn.leaky_relu(tf.add(tf.matmul(input, W), b))
 
-        '''
-        
-        '''
-
-    def _initialize_weights(self):
-        all_weights = dict()
-
-        all_weights['w1'] = tf.Variable(
-            tf.truncated_normal(self.filter_size, stddev=0.1)
-        )
-        all_weights['b1'] = tf.Variable(
-            tf.constant(0.1, shape=[self.filter_size[3]])
-        )
-        all_weights['w2'] = tf.Variable(
-            tf.truncated_normal([5,5,64,64], stddev=0.1)
-        )
-        all_weights['b2'] = tf.Variable(
-            tf.constant(0.1, shape=[64])
-        )
-        '''
-        '''
-        return all_weights
-
-    @property
-    def partial_fit(self):
-        return (self.cost,self.opt)
-
-    def calc_total_cost(self):
-        return self.cost
-
-    def reconstruct(self):
-        return self.out
-
+            return out
 
 def test():
-    import numpy as np
-
-    data = np.load('../data/data.npz')
+    sae = Stacked_AutoEncoder()
     with tf.Session() as sess:
-        sae = Stacked_AutoEncoder([5, 5, 3, 64], [64, 32, 128, 3])
+        x = tf.placeholder(tf.float32, [None, 32, 128, 3])
+        _,_,_,_,cost = sae.build(x, 'buile_model',[5,5,3,64])
+        _, _, _, _,cost1 = sae.build(x, 'buile_model1',[5,5,3,64])
         sess.run(tf.global_variables_initializer())
-        out = sess.run(sae.cost, feed_dict={sae.x: np.reshape(data['train'][:64], [-1, 32, 128, 3])})
 
-        print(out)
-    '''
-    
-    
-    print(data['train'].shape)
-    '''
-
+        asd = sess.run(cost1,feed_dict={x:np.reshape(np.load('../data/data.npz')['train'][:64],[-1,32,128,3])})
+        print(asd)
 
 if __name__ == '__main__':
     test()

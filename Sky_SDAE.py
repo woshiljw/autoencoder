@@ -18,11 +18,12 @@ class Data(object):
         return np.reshape(self.train_data[self.num - self.batchsize:self.num], resize)
 
 
-sae = Stacked_AutoEncoder([5, 5, 3, 64], [64, 32, 128, 3])
-
+sae = Stacked_AutoEncoder()
 data = Data('./data/data.npz', 64)
-
+x = tf.placeholder(tf.float32, [None, 32, 128, 3])
 with tf.Session() as sess:
+    _, _, _, _, cost = sae.build(x, 'buile_model', [5, 5, 3, 64])
+    opt = tf.reduce_mean(cost)
     sess.run(tf.global_variables_initializer())
     print(len(data.train_data))
 
@@ -31,7 +32,7 @@ with tf.Session() as sess:
         total_batch = int(len(data.train_data) / 64)
         data.num=0
         for i in range(total_batch):
-            cost, _ = sess.run(sae.partial_fit, feed_dict={sae.x: data.batch_size([-1, 32, 128, 3])})
-            avg_cost +=cost/len(data.train_data)*64
+            cost1, _ = sess.run((cost,opt),feed_dict={x: data.batch_size([-1, 32, 128, 3])})
+            avg_cost +=cost1/len(data.train_data)*64
 
         print("Epoch:{},Cost:{:.9f}".format(epoch,avg_cost))
